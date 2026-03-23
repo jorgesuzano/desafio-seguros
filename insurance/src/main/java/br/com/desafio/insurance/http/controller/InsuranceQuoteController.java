@@ -18,7 +18,7 @@ import jakarta.validation.Valid;
 @RequiredArgsConstructor
 public class InsuranceQuoteController {
 
-//    private final CatalogValidationService catalogValidationService;
+    private final CatalogValidationService catalogValidationService;
 
     @PostMapping
     public ResponseEntity<?> createQuote(@RequestBody InsuranceQuoteRequestDTO request) {
@@ -27,10 +27,10 @@ public class InsuranceQuoteController {
                     request.getProductId(), request.getOfferId());
 
             // Valida produto e oferta contra o catálogo
-//            OfferDTO validatedOffer = catalogValidationService
-//                    .validateProductAndOffer(request.getProductId(), request.getOfferId());
+            OfferDTO validatedOffer = catalogValidationService
+                    .validateProductAndOffer(request.getProductId(), request.getOfferId());
 
-//            log.info("Cotação validada com sucesso. Oferta: {}", validatedOffer.getName());
+            log.info("Cotação validada com sucesso. Oferta: {}", validatedOffer.getName());
 
 
             return ResponseEntity.status(HttpStatus.CREATED)

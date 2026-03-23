@@ -13,13 +13,10 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class CatalogValidationService {
 
-    public final CatalogServiceClient catalogServiceClient;
-
-    public CatalogValidationService(CatalogServiceClient catalogServiceClient) {
-        this.catalogServiceClient = catalogServiceClient;
-    }
+    private final CatalogServiceClient catalogServiceClient;
 
     /**
      * Valida se o produto existe e está ativo

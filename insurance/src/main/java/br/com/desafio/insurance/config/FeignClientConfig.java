@@ -7,6 +7,6 @@ import org.springframework.context.annotation.Configuration;
  * Configuração dos clientes Feign
  */
 @Configuration
-@EnableFeignClients(basePackages = "br.com.desafio.insurance.service")
+@EnableFeignClients(basePackages = "br.com.desafio.insurance.http.client")
 public class FeignClientConfig {
 }

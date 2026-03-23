@@ -3,6 +3,7 @@ package br.com.desafio.insurance.service;
 
 import br.com.desafio.insurance.domain.catalog.OfferDTO;
 import br.com.desafio.insurance.domain.catalog.ProductDTO;
+import br.com.desafio.insurance.http.client.CatalogServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,10 +13,13 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class CatalogValidationService {
 
-    private final CatalogServiceClient catalogServiceClient;
+    public final CatalogServiceClient catalogServiceClient;
+
+    public CatalogValidationService(CatalogServiceClient catalogServiceClient) {
+        this.catalogServiceClient = catalogServiceClient;
+    }
 
     /**
      * Valida se o produto existe e está ativo
@@ -44,6 +48,7 @@ public class CatalogValidationService {
         } catch (Exception e) {
             log.error("Erro ao validar produto: {}", productId, e);
             throw new IllegalArgumentException("Erro ao validar produto: " + e.getMessage());
+            // ⚠️ Mascara exceção real (FeignException, timeout, etc)
         }
     }
 

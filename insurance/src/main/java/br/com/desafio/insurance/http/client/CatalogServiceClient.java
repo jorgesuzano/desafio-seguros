@@ -1,4 +1,4 @@
-package br.com.desafio.insurance.service;
+package br.com.desafio.insurance.http.client;
 
 
 import br.com.desafio.insurance.domain.catalog.OfferDTO;

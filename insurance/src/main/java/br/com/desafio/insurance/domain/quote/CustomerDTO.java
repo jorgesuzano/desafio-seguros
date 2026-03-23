@@ -1,4 +1,4 @@
-package br.com.desafio.insurance.domain;
+package br.com.desafio.insurance.domain.quote;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

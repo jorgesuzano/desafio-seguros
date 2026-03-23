@@ -1,0 +1,43 @@
+#server:
+#  port: 8080
+#  servlet:
+#    context-path: /insurance-api
+#
+#spring:
+#  application:
+#    name: insurance-quote-service
+#  cloud:
+#    openfeign:
+#      client:
+#        config:
+#          default:
+#            connectTimeout: 5000
+#            readTimeout: 5000
+#  cache:
+#    type: caffeine
+#    caffeine:
+#      spec: maximumSize=500,expireAfterWrite=10m
+#
+#catalog-service:
+#  url: http://localhost:8081
+#
+#management:
+#  endpoints:
+#    web:
+#      exposure:
+#        include: health,info,metrics,prometheus
+#  endpoint:
+#    health:
+#      show-details: always
+##  metrics:
+##    export:
+##      prometheus:
+##        enabled: true
+#
+#logging:
+#  level:
+#    root: INFO
+#    br.com.desafio.insurance: DEBUG
+#  pattern:
+#    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+#

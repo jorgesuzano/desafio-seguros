@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 @Slf4j
 @RestController
@@ -21,7 +21,7 @@ public class InsuranceQuoteController {
 //    private final CatalogValidationService catalogValidationService;
 
     @PostMapping
-    public ResponseEntity<?> createQuote(@Valid @RequestBody InsuranceQuoteRequestDTO request) {
+    public ResponseEntity<?> createQuote(@RequestBody InsuranceQuoteRequestDTO request) {
         try {
             log.info("Recebida requisição de cotação para produto: {} e oferta: {}",
                     request.getProductId(), request.getOfferId());
@@ -32,8 +32,6 @@ public class InsuranceQuoteController {
 
 //            log.info("Cotação validada com sucesso. Oferta: {}", validatedOffer.getName());
 
-            // TODO: Salvar cotação no banco de dados
-            // TODO: Publicar evento "insurance-quote-received" na fila
 
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body("Cotação criada com sucesso");

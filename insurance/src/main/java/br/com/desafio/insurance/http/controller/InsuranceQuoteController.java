@@ -1,14 +1,13 @@
 package br.com.desafio.insurance.http.controller;
 
-import br.com.desafio.insurance.domain.quote.CustomerDTO;
-import br.com.desafio.insurance.service.CatalogValidationService;
-import br.com.desafio.insurance.service.InsuranceQuoteService;
-import br.com.desafio.insurance.domain.quote.InsuranceQuoteRequestDTO;
-import br.com.desafio.insurance.domain.dto.InsuranceQuoteResponseDTO;
 import br.com.desafio.insurance.domain.catalog.OfferDTO;
 import br.com.desafio.insurance.domain.entity.InsuranceQuote;
 import br.com.desafio.insurance.domain.event.InsuranceQuoteReceivedEvent;
+import br.com.desafio.insurance.domain.quote.InsuranceQuoteRequestDTO;
+import br.com.desafio.insurance.messaging.mapper.QuoteEventMapper;
 import br.com.desafio.insurance.messaging.producer.InsuranceQuoteProducer;
+import br.com.desafio.insurance.service.CatalogPort;
+import br.com.desafio.insurance.service.InsuranceQuoteServicePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -25,134 +24,66 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class InsuranceQuoteController {
 
-    private final CatalogValidationService catalogValidationService;
-    private final InsuranceQuoteService quoteService;
+    /** Depends on interfaces, not implementations (DIP). */
+    private final CatalogPort catalogPort;
+    private final InsuranceQuoteServicePort quoteService;
     private final InsuranceQuoteProducer quoteProducer;
+    private final QuoteEventMapper eventMapper;
+    private final InsuranceQuoteResponseMapper responseMapper;
 
     @PostMapping
     public ResponseEntity<?> createQuote(@RequestBody InsuranceQuoteRequestDTO request) {
         try {
-            log.info("Received insurance quote request for product: {} and offer: {}",
+            log.debug("Quote request received – product: {} offer: {}",
                     request.getProductId(), request.getOfferId());
 
-            // 1. Validar produto e oferta contra o catálogo
-            OfferDTO validatedOffer = catalogValidationService
-                    .validateProductAndOffer(request.getProductId(), request.getOfferId());
+            OfferDTO validatedOffer = catalogPort.validateProductAndOffer(
+                    request.getProductId(), request.getOfferId());
 
-            log.info("Quote validated successfully against catalog. Offer: {}", validatedOffer.getName());
-
-            // 2. Criar e persistir cotação com validações
             InsuranceQuote quote = quoteService.createAndValidateQuote(request, validatedOffer);
 
-//            // 3. Publicar evento Kafka
-            Map<String, Object> customerMap = new HashMap<>();
-            customerMap.put("document_number", request.getCustomer().getDocumentNumber());
-            customerMap.put("name", request.getCustomer().getName());
-            customerMap.put("type", request.getCustomer().getType().toString());
-            customerMap.put("gender", request.getCustomer().getGender().toString());
-            customerMap.put("date_of_birth", request.getCustomer().getDateOfBirth());
-            customerMap.put("email", request.getCustomer().getEmail());
-            customerMap.put("phone_number", request.getCustomer().getPhoneNumber());
-
-            InsuranceQuoteReceivedEvent event = InsuranceQuoteReceivedEvent.builder()
-                    .quoteId(quote.getId())
-                    .productId(request.getProductId())
-                    .offerId(request.getOfferId())
-                    .category(request.getCategory())
-                    .totalMonthlyPremiumAmount(request.getTotalMonthlyPremiumAmount())
-                    .totalCoverageAmount(request.getTotalCoverageAmount())
-                    .coverages(request.getCoverages())
-                    .assistances(request.getAssistances())
-                    .customer(customerMap)
-                    .receivedAt(LocalDateTime.now().toString())
-                    .build();
-
+            InsuranceQuoteReceivedEvent event = eventMapper.toEvent(quote, request);
             quoteProducer.publishQuoteReceivedEvent(event);
 
-            // 4. Retornar resposta com ID
-            log.info("Quote processed successfully with ID: {}", quote.getId());
-
             Map<String, Object> response = new HashMap<>();
-            response.put("id", quote.getId());
-            response.put("message", "Cotação criada com sucesso");
+            response.put("id",     quote.getId());
             response.put("status", quote.getStatus().toString());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
         } catch (IllegalArgumentException e) {
-            log.error("Validation error: {}", e.getMessage());
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            error.put("timestamp", LocalDateTime.now().toString());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-
+            log.warn("Quote validation failed: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                    .body(errorBody(e.getMessage()));
         } catch (Exception e) {
-            log.error("Error processing quote", e);
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Erro ao processar cotação: " + e.getMessage());
-            error.put("timestamp", LocalDateTime.now().toString());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            log.error("Unexpected error creating quote", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(errorBody("Erro ao processar cotação"));
         }
     }
 
     @GetMapping("/{quoteId}/{documentNumber}")
-    public ResponseEntity<?> getQuote(
-            @PathVariable String quoteId,
-            @PathVariable String documentNumber) {
+    public ResponseEntity<?> getQuote(@PathVariable String quoteId,
+                                      @PathVariable String documentNumber) {
         try {
-            log.info("Fetching quote with ID: {} and documentNumber: {}", quoteId, documentNumber);
-
             InsuranceQuote quote = quoteService.getQuoteById(quoteId, documentNumber)
-                    .orElseThrow(() -> new IllegalArgumentException("Quote not found: " + quoteId));
+                    .orElseThrow(() -> new IllegalArgumentException("Cotação não encontrada: " + quoteId));
 
-            InsuranceQuoteResponseDTO response = InsuranceQuoteResponseDTO.builder()
-                    .id(quote.getId())
-                    .insurancePolicyId(quote.getInsurancePolicyId())
-                    .productId(quote.getProductId())
-                    .offerId(quote.getOfferId())
-                    .category(quote.getCategory())
-                    .createdAt(convertTimestampToLocalDateTime(quote.getCreatedAt()))
-                    .updatedAt(convertTimestampToLocalDateTime(quote.getUpdatedAt()))
-                    .totalMonthlyPremiumAmount(quote.getTotalMonthlyPremiumAmount())
-                    .totalCoverageAmount(quote.getTotalCoverageAmount())
-                    .coverages(quote.getCoverages())
-                    .assistances(quote.getAssistances())
-                    .customer(CustomerDTO.builder()
-                            .documentNumber(quote.getCustomer().getDocumentNumber())
-                            .name(quote.getCustomer().getName())
-                            .type(quote.getCustomer().getType())
-                            .gender(quote.getCustomer().getGender())
-                            .dateOfBirth(quote.getCustomer().getDateOfBirth())
-                            .email(quote.getCustomer().getEmail())
-                            .phoneNumber(quote.getCustomer().getPhoneNumber())
-                            .build())
-                    .build();
-
-            log.info("Quote retrieved successfully with ID: {}", quoteId);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(responseMapper.toDTO(quote));
 
         } catch (IllegalArgumentException e) {
-            log.error("Quote not found: {}", quoteId);
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            error.put("timestamp", LocalDateTime.now().toString());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(e.getMessage()));
         } catch (Exception e) {
-            log.error("Error retrieving quote", e);
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Erro ao recuperar cotação: " + e.getMessage());
-            error.put("timestamp", LocalDateTime.now().toString());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            log.error("Error retrieving quote {}", quoteId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(errorBody("Erro ao recuperar cotação"));
         }
     }
 
-    private LocalDateTime convertTimestampToLocalDateTime(Long timestamp) {
-        if (timestamp == null) return null;
-        return LocalDateTime.ofInstant(
-                java.time.Instant.ofEpochMilli(timestamp),
-                java.time.ZoneId.systemDefault()
-        );
+    private Map<String, Object> errorBody(String message) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("error",     message);
+        body.put("timestamp", LocalDateTime.now().toString());
+        return body;
     }
 }
-

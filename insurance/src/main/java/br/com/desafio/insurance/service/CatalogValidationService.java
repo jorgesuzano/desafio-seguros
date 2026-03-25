@@ -14,78 +14,9 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CatalogValidationService {
+public class CatalogValidationService implements CatalogPort {
 
     private final CatalogServiceClient catalogServiceClient;
-
-    /**
-     * Valida se o produto existe e está ativo
-     *
-     * @param productId ID do produto a validar
-     * @return true se produto existe e está ativo
-     * @throws IllegalArgumentException se produto não encontrado ou inativo
-     */
-    public boolean validateProduct(String productId) {
-        try {
-            ProductDTO product = catalogServiceClient.getProduct(productId);
-
-            if (product == null) {
-                log.warn("Produto não encontrado: {}", productId);
-                throw new IllegalArgumentException("Produto não encontrado: " + productId);
-            }
-
-            if (!Boolean.TRUE.equals(product.getActive())) {
-                log.warn("Produto inativo: {}", productId);
-                throw new IllegalArgumentException("Produto inativo: " + productId);
-            }
-
-            log.info("Produto validado com sucesso: {}", productId);
-            return true;
-
-        } catch (Exception e) {
-            log.error("Erro ao validar produto: {}", productId, e);
-            throw new IllegalArgumentException("Erro ao validar produto: " + e.getMessage());
-            // ⚠️ Mascara exceção real (FeignException, timeout, etc)
-        }
-    }
-
-    /**
-     * Valida se a oferta existe, está ativa e pertence ao produto informado
-     *
-     * @param offerId ID da oferta a validar
-     * @param productId ID do produto esperado
-     * @return true se oferta é válida
-     * @throws IllegalArgumentException se oferta não encontrada, inativa ou não pertence ao produto
-     */
-    public boolean validateOffer(String offerId, String productId) {
-        try {
-            OfferDTO offer = catalogServiceClient.getOffer(offerId);
-
-            if (offer == null) {
-                log.warn("Oferta não encontrada: {}", offerId);
-                throw new IllegalArgumentException("Oferta não encontrada: " + offerId);
-            }
-
-            if (!Boolean.TRUE.equals(offer.getActive())) {
-                log.warn("Oferta inativa: {}", offerId);
-                throw new IllegalArgumentException("Oferta inativa: " + offerId);
-            }
-
-            if (!offer.getProductId().equals(productId)) {
-                log.warn("Oferta {} não pertence ao produto {}", offerId, productId);
-                throw new IllegalArgumentException(
-                    "Oferta não pertence ao produto informado"
-                );
-            }
-
-            log.info("Oferta validada com sucesso: {}", offerId);
-            return true;
-
-        } catch (Exception e) {
-            log.error("Erro ao validar oferta: {}", offerId, e);
-            throw new IllegalArgumentException("Erro ao validar oferta: " + e.getMessage());
-        }
-    }
 
     /**
      * Valida produto e oferta juntos
@@ -94,9 +25,36 @@ public class CatalogValidationService {
      * @param offerId ID da oferta
      * @return OfferDTO com dados da oferta validada
      */
+    @Override
     public OfferDTO validateProductAndOffer(String productId, String offerId) {
-        validateProduct(productId);
-        validateOffer(offerId, productId);
-        return catalogServiceClient.getOffer(offerId);
+        ProductDTO product = catalogServiceClient.getProduct(productId);
+        validateProduct(productId, product);
+
+        OfferDTO offer = catalogServiceClient.getOffer(offerId);
+        validateOffer(offerId, productId, offer);
+
+        log.debug("Produto {} e oferta {} validados", productId, offerId);
+        return offer;
+    }
+
+    // ---- métodos auxiliares privados (detalhes da implementação, não fazem parte da interface) ----
+
+    private void validateProduct(String productId, ProductDTO product) {
+        if (product == null)
+            throw new IllegalArgumentException("Produto não encontrado: " + productId);
+
+        if (!Boolean.TRUE.equals(product.getActive()))
+            throw new IllegalArgumentException("Produto inativo: " + productId);
+    }
+
+    private void validateOffer(String offerId, String productId, OfferDTO offer) {
+        if (offer == null)
+            throw new IllegalArgumentException("Oferta não encontrada: " + offerId);
+
+        if (!Boolean.TRUE.equals(offer.getActive()))
+            throw new IllegalArgumentException("Oferta inativa: " + offerId);
+
+        if (!productId.equals(offer.getProductId()))
+            throw new IllegalArgumentException("Oferta não pertence ao produto informado");
     }
 }

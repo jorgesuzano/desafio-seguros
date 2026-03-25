@@ -23,7 +23,7 @@ public class AwsSqsConfig {
 
     @Bean
     public SqsClient sqsClient() {
-        log.info("Configuring SQS client for region: {} and endpoint: {}", awsRegion, endpoint);
+        log.debug("Configuring SQS client – region: {} endpoint: {}", awsRegion, endpoint);
 
         var credentialsProvider = StaticCredentialsProvider.create(
                 AwsBasicCredentials.create("admin", "admin")

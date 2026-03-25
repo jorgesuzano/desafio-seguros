@@ -8,7 +8,7 @@ import br.com.desafio.insurance.domain.quote.CustomerDTO;
 import br.com.desafio.insurance.domain.quote.CustomerType;
 import br.com.desafio.insurance.domain.quote.Gender;
 import br.com.desafio.insurance.domain.quote.InsuranceQuoteRequestDTO;
-import br.com.desafio.insurance.persistence.repository.InsuranceQuoteRepository;
+import br.com.desafio.insurance.persistence.repository.InsuranceQuoteRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 class InsuranceQuoteServiceTest {
 
     @Mock
-    private InsuranceQuoteRepository quoteRepository;
+    private InsuranceQuoteRepositoryPort quoteRepository;
 
     @InjectMocks
     private InsuranceQuoteService quoteService;

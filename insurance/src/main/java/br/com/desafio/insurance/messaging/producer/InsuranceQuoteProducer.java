@@ -22,31 +22,25 @@ public class InsuranceQuoteProducer {
     private String quoteReceivedQueueUrl;
     
     public void publishQuoteReceivedEvent(InsuranceQuoteReceivedEvent event) {
-        log.info("Publishing InsuranceQuoteReceivedEvent for quote: {}", event.getQuoteId());
-        
+        log.debug("Publishing quote-received event – quoteId: {}", event.getQuoteId());
         try {
             // Serialize event to JSON
             String messageBody = objectMapper.writeValueAsString(event);
-            
-            log.debug("Queue URL: {}", quoteReceivedQueueUrl);
-            log.debug("Message body: {}", messageBody);
-            
+
             // Send message to SQS
-            SendMessageRequest sendMsgRequest = SendMessageRequest.builder()
-                .queueUrl(quoteReceivedQueueUrl)
-                .messageBody(messageBody)
-                .build();
+            SendMessageResponse result = sqsClient.sendMessage(
+                    SendMessageRequest.builder()
+                            .queueUrl(quoteReceivedQueueUrl)
+                            .messageBody(messageBody)
+                            .build());
             
-            SendMessageResponse result = sqsClient.sendMessage(sendMsgRequest);
-            
-            log.info("Quote received event published successfully for quoteId: {} with messageId: {}", 
-                event.getQuoteId(), result.messageId());
-            
+            log.debug("Quote-received event sent – quoteId: {} messageId: {}",
+                    event.getQuoteId(), result.messageId());
+
         } catch (Exception e) {
-            log.error("Error sending quote received event for quoteId: {}. Queue URL: {}", 
-                event.getQuoteId(), quoteReceivedQueueUrl, e);
-            // Log but don't rethrow - the quote is already persisted in DynamoDB
+            // Don't rethrow: the quote is already persisted; the event failure is non-fatal.
+            log.error("Failed to publish quote-received event for quoteId: {}",
+                    event.getQuoteId(), e);
         }
     }
 }
-

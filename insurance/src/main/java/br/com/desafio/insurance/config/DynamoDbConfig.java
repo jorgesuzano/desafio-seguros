@@ -11,7 +11,6 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClientBuilder;
 import br.com.desafio.insurance.domain.entity.InsuranceQuote;
 
 import java.net.URI;
@@ -29,8 +28,8 @@ public class DynamoDbConfig {
     @Bean
     public DynamoDbClient dynamoDbClient(
             @Value("${cloud.aws.dynamodb.endpoint:http://localhost:4566}") String dynamoEndpoint) {
-        log.info("Configuring DynamoDB client for region: {} endpoint: {} table: {}", awsRegion, dynamoEndpoint, tableName);
-        
+        log.debug("Configuring DynamoDB client – region: {} endpoint: {} table: {}", awsRegion, dynamoEndpoint, tableName);
+
         return DynamoDbClient.builder()
             .endpointOverride(URI.create(dynamoEndpoint))
             .region(Region.of(awsRegion))
@@ -50,7 +49,7 @@ public class DynamoDbConfig {
     public DynamoDbTable<InsuranceQuote> insuranceQuoteTable(
         DynamoDbEnhancedClient dynamoDbEnhancedClient) {
         
-        log.info("Creating DynamoDbTable bean for InsuranceQuote with table name: {}", tableName);
+        log.debug("Creating DynamoDbTable bean – table: {}", tableName);
         
         return dynamoDbEnhancedClient.table(
             tableName,

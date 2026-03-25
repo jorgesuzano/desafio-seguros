@@ -5,9 +5,10 @@ import br.com.desafio.insurance.domain.catalog.PremiumAmountDTO;
 import br.com.desafio.insurance.domain.entity.InsuranceQuote;
 import br.com.desafio.insurance.domain.entity.QuoteStatus;
 import br.com.desafio.insurance.domain.event.InsuranceQuoteReceivedEvent;
+import br.com.desafio.insurance.messaging.mapper.QuoteEventMapper;
 import br.com.desafio.insurance.messaging.producer.InsuranceQuoteProducer;
-import br.com.desafio.insurance.service.CatalogValidationService;
-import br.com.desafio.insurance.service.InsuranceQuoteService;
+import br.com.desafio.insurance.service.CatalogPort;
+import br.com.desafio.insurance.service.InsuranceQuoteServicePort;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,20 +33,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(InsuranceQuoteController.class)
 class InsuranceQuoteControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired MockMvc mockMvc;
+    @Autowired ObjectMapper objectMapper;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockBean
-    private CatalogValidationService catalogValidationService;
-
-    @MockBean
-    private InsuranceQuoteService quoteService;
-
-    @MockBean
-    private InsuranceQuoteProducer quoteProducer;
+    @MockBean CatalogPort catalogPort;
+    @MockBean InsuranceQuoteServicePort quoteService;
+    @MockBean InsuranceQuoteProducer quoteProducer;
+    @MockBean QuoteEventMapper eventMapper;
+    @MockBean InsuranceQuoteResponseMapper responseMapper;
 
     private Map<String, Object> validRequestBody;
     private OfferDTO mockOffer;
@@ -106,12 +101,12 @@ class InsuranceQuoteControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/quotes - should return 201 Created with quote ID")
+    @DisplayName("POST /api/v1/quotes - should return 201 Created")
     void shouldCreateQuoteAndReturn201() throws Exception {
-        when(catalogValidationService.validateProductAndOffer(anyString(), anyString()))
-                .thenReturn(mockOffer);
+        when(catalogPort.validateProductAndOffer(anyString(), anyString())).thenReturn(mockOffer);
         when(quoteService.createAndValidateQuote(any(), any())).thenReturn(savedQuote);
-        doNothing().when(quoteProducer).publishQuoteReceivedEvent(any(InsuranceQuoteReceivedEvent.class));
+        when(eventMapper.toEvent(any(), any())).thenReturn(InsuranceQuoteReceivedEvent.builder().build());
+        doNothing().when(quoteProducer).publishQuoteReceivedEvent(any());
 
         mockMvc.perform(post("/api/v1/quotes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -120,34 +115,33 @@ class InsuranceQuoteControllerTest {
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.status").value("RECEIVED"));
 
-        verify(quoteProducer).publishQuoteReceivedEvent(any(InsuranceQuoteReceivedEvent.class));
+        verify(quoteProducer).publishQuoteReceivedEvent(any());
     }
 
     @Test
-    @DisplayName("POST /api/v1/quotes - should return 400 when catalog validation fails")
-    void shouldReturn400WhenCatalogValidationFails() throws Exception {
-        when(catalogValidationService.validateProductAndOffer(anyString(), anyString()))
+    @DisplayName("POST /api/v1/quotes - should return 422 when catalog validation fails")
+    void shouldReturn422WhenCatalogValidationFails() throws Exception {
+        when(catalogPort.validateProductAndOffer(anyString(), anyString()))
                 .thenThrow(new IllegalArgumentException("Produto não encontrado"));
 
         mockMvc.perform(post("/api/v1/quotes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequestBody)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.error").value("Produto não encontrado"));
     }
 
     @Test
-    @DisplayName("POST /api/v1/quotes - should return 400 when business validation fails")
-    void shouldReturn400WhenBusinessValidationFails() throws Exception {
-        when(catalogValidationService.validateProductAndOffer(anyString(), anyString()))
-                .thenReturn(mockOffer);
+    @DisplayName("POST /api/v1/quotes - should return 422 when business validation fails")
+    void shouldReturn422WhenBusinessValidationFails() throws Exception {
+        when(catalogPort.validateProductAndOffer(anyString(), anyString())).thenReturn(mockOffer);
         when(quoteService.createAndValidateQuote(any(), any()))
                 .thenThrow(new IllegalArgumentException("Valor do prêmio inválido"));
 
         mockMvc.perform(post("/api/v1/quotes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequestBody)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.error").value("Valor do prêmio inválido"));
     }
 }

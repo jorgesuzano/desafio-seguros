@@ -9,10 +9,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
-/**
- * Mapeia a entidade de domínio para o DTO de resposta HTTP.
- * Extrai a responsabilidade de mapeamento do controller (SRP).
- */
 @Component
 public class InsuranceQuoteResponseMapper {
 

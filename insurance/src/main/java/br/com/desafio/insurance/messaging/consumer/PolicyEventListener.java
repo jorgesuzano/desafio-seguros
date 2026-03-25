@@ -20,7 +20,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PolicyEventListener {
 
-    /** Depends on interface, not the concrete service class (DIP). */
     private final InsuranceQuoteServicePort quoteService;
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;

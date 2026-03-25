@@ -7,10 +7,6 @@ import br.com.desafio.insurance.domain.quote.InsuranceQuoteRequestDTO;
 
 import java.util.Optional;
 
-/**
- * Port (interface) for insurance quote use-cases.
- * Follows DIP: high-level modules depend on this abstraction, not on the concrete class.
- */
 public interface InsuranceQuoteServicePort {
 
     InsuranceQuote createAndValidateQuote(InsuranceQuoteRequestDTO request, OfferDTO validatedOffer);

@@ -9,9 +9,6 @@ import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 
-/**
- * DTO para dados do cliente
- */
 @Data
 @Builder
 @NoArgsConstructor

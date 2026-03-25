@@ -12,9 +12,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-/**
- * DTO para requisição de cotação de seguro
- */
 @Data
 @Builder
 @NoArgsConstructor

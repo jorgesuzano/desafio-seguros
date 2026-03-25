@@ -10,9 +10,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-/**
- * DTO para dados de Oferta do Catálogo
- */
 @Data
 @Builder
 @NoArgsConstructor

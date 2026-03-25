@@ -14,27 +14,19 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Implements quote lifecycle use-cases.
- *
- * Validation is fully delegated to {@link QuoteValidator} strategy beans —
- * new rules can be added without touching this class (OCP).
- */
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class InsuranceQuoteService implements InsuranceQuoteServicePort {
 
-    /** Depends on the port interface, not the concrete repository class (DIP). */
     private final InsuranceQuoteRepositoryPort quoteRepository;
 
-    /** Ordered list of validators injected by Spring (all @Component QuoteValidator beans). */
     private final List<QuoteValidator> validators;
 
     @Override
     public InsuranceQuote createAndValidateQuote(InsuranceQuoteRequestDTO request,
                                                  OfferDTO validatedOffer) {
-        // Run each validation rule in declaration order
         validators.forEach(v -> v.validate(request, validatedOffer));
 
         Customer customer = Customer.builder()

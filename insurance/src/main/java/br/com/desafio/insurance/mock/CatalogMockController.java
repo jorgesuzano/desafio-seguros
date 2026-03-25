@@ -14,10 +14,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Mock Server para simular a API de Catálogo
- * Use este controller apenas em desenvolvimento/testes
- */
 @RestController
 @RequestMapping("/mock/catalog")
 public class CatalogMockController {
@@ -25,9 +21,6 @@ public class CatalogMockController {
     private static final String PRODUCT_ID = "1b2da7cc-b367-4196-8a78-9cfeec21f587";
     private static final String OFFER_ID = "adc56d77-348c-4bf0-908f-22d402ee715c";
 
-    /**
-     * Mock: Retorna dados de um produto
-     */
     @GetMapping("/products/{id}")
     public ProductDTO getProduct(@PathVariable String id) {
         if (PRODUCT_ID.equals(id)) {
@@ -46,9 +39,6 @@ public class CatalogMockController {
         throw new IllegalArgumentException("Produto não encontrado: " + id);
     }
 
-    /**
-     * Mock: Retorna dados de uma oferta
-     */
     @GetMapping("/offers/{id}")
     public OfferDTO getOffer(@PathVariable String id) {
         if (OFFER_ID.equals(id)) {

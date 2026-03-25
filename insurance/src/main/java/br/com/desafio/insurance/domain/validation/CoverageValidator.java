@@ -8,10 +8,6 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.Map;
 
-/**
- * Validates that all requested coverages exist in the offer
- * and do not exceed the offer's maximum allowed values.
- */
 @Component
 @Order(1)
 public class CoverageValidator implements QuoteValidator {

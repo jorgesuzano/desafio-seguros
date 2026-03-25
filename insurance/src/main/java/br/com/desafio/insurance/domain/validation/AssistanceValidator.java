@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/** Validates that all requested assistances exist in the offer. */
 @Component
 @Order(2)
 public class AssistanceValidator implements QuoteValidator {

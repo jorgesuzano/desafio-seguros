@@ -7,9 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-/**
- * DTO para valores de prêmio mensal
- */
 @Data
 @Builder
 @NoArgsConstructor

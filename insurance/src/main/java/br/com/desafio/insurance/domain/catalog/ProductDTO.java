@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * DTO para dados de Produto do Catálogo
- */
 @Data
 @Builder
 @NoArgsConstructor

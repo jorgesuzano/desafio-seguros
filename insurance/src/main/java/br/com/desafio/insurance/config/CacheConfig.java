@@ -8,10 +8,6 @@ import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Configuração de cache Caffeine para produtos e ofertas.
- * O spec (TTL / tamanho máximo) é lido de spring.cache.caffeine.spec no application.yml.
- */
 @Configuration
 @EnableCaching
 public class CacheConfig {

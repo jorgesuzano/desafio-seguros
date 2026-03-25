@@ -9,10 +9,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Maps domain objects to SQS event payloads.
- * Extracts event-building responsibility from the controller (SRP).
- */
 @Component
 public class QuoteEventMapper {
 

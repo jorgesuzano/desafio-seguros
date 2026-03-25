@@ -34,7 +34,7 @@ public class CatalogMockController {
             return ProductDTO.builder()
                 .id(id)
                 .name("Seguro de Vida")
-                .createdAt(LocalDateTime.parse("2021-07-01T00:00:00"))
+                .createdAt("2021-07-01T00:00:00")
                 .active(true)
                 .offers(Arrays.asList(
                     "adc56d77-348c-4bf0-908f-22d402ee715c",
@@ -62,7 +62,7 @@ public class CatalogMockController {
                 .id(id)
                 .productId(PRODUCT_ID)
                 .name("Seguro de Vida Familiar")
-                .createdAt(LocalDateTime.parse("2021-07-01T00:00:00"))
+                .createdAt("2021-07-01T00:00:00")
                 .active(true)
                 .coverages(coverages)
                 .assistances(Arrays.asList(

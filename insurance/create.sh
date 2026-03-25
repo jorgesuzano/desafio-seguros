@@ -28,11 +28,11 @@ export HTTPS_PROXY=
 #  fi
 #}
 #
-#create_dynamo(){
-#  local JSON_PATCH=$1
-#  aws --endpoint-url=http://localhost:4566 dynamodb create-table --cli-input-json file://${JSON_PATCH}
-#  echo "config table"
-#}
+create_dynamo(){
+  local JSON_PATCH=$1
+  aws --endpoint-url=http://localhost:4566 dynamodb create-table --cli-input-json file://${JSON_PATCH}
+  echo "config table"
+}
 
 #builder_dynamo(){
 #    local JSON_PATCH=$1

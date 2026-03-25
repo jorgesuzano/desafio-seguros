@@ -21,7 +21,7 @@ public class Customer {
     private String name;
     private CustomerType type;
     private Gender gender;
-    private LocalDate dateOfBirth;
+    private String dateOfBirth;
     private String email;
     private Long phoneNumber;
 }

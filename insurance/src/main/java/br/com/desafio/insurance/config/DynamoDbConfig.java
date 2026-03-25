@@ -4,7 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
@@ -19,9 +20,6 @@ import java.net.URI;
 @Configuration
 public class DynamoDbConfig {
     
-    @Value("${aws.dynamodb.endpoint:}")
-    private String dynamoDbEndpoint;
-    
     @Value("${aws.dynamodb.region:us-east-1}")
     private String awsRegion;
     
@@ -32,17 +30,13 @@ public class DynamoDbConfig {
     public DynamoDbClient dynamoDbClient() {
         log.info("Configuring DynamoDB client for region: {} and table: {}", awsRegion, tableName);
         
-        DynamoDbClientBuilder builder = DynamoDbClient.builder()
+        return DynamoDbClient.builder()
+            .endpointOverride(URI.create("http://localhost:4566"))
             .region(Region.of(awsRegion))
-            .credentialsProvider(DefaultCredentialsProvider.create());
-        
-        // Se um endpoint local for configurado (para testes com LocalStack/DynamoDB Local)
-        if (dynamoDbEndpoint != null && !dynamoDbEndpoint.isEmpty()) {
-            log.info("Using local DynamoDB endpoint: {}", dynamoDbEndpoint);
-            builder.endpointOverride(URI.create(dynamoDbEndpoint));
-        }
-        
-        return builder.build();
+            .credentialsProvider(StaticCredentialsProvider.create(
+                AwsBasicCredentials.create("test", "test")
+            ))
+            .build();
     }
     
     @Bean

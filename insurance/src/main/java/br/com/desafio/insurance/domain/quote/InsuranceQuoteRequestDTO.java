@@ -45,6 +45,5 @@ public class InsuranceQuoteRequestDTO {
     private List<String> assistances;
 
     @JsonProperty("customer")
-    @Valid
     private CustomerDTO customer;
 }

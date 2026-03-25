@@ -18,27 +18,23 @@ public class InsuranceQuoteProducer {
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${aws.sqs.queue.insurance-quote-received}")
-    private String quoteReceivedQueueName;
+    @Value("${cloud.aws.fila.insurance-quote-received}")
+    private String quoteReceivedQueueUrl;
     
     public void publishQuoteReceivedEvent(InsuranceQuoteReceivedEvent event) {
         log.info("Publishing InsuranceQuoteReceivedEvent for quote: {}", event.getQuoteId());
         
         try {
-            // Initialize queues if not already done
-//            if (sqsQueueConfig.getQuoteReceivedQueueUrl() == null) {
-//                sqsQueueConfig.initializeQueues();
-//            }
-            
             // Serialize event to JSON
             String messageBody = objectMapper.writeValueAsString(event);
             
+            log.debug("Queue URL: {}", quoteReceivedQueueUrl);
+            log.debug("Message body: {}", messageBody);
+            
             // Send message to SQS
             SendMessageRequest sendMsgRequest = SendMessageRequest.builder()
-                .queueUrl(quoteReceivedQueueName)
+                .queueUrl(quoteReceivedQueueUrl)
                 .messageBody(messageBody)
-                .messageGroupId(event.getQuoteId().toString()) // For FIFO queue consistency
-                .messageDeduplicationId(event.getQuoteId().toString() + "-" + System.currentTimeMillis())
                 .build();
             
             SendMessageResponse result = sqsClient.sendMessage(sendMsgRequest);
@@ -47,8 +43,9 @@ public class InsuranceQuoteProducer {
                 event.getQuoteId(), result.messageId());
             
         } catch (Exception e) {
-            log.error("Error sending quote received event for quoteId: {}", event.getQuoteId(), e);
-            throw new RuntimeException("Failed to publish quote event to SQS", e);
+            log.error("Error sending quote received event for quoteId: {}. Queue URL: {}", 
+                event.getQuoteId(), quoteReceivedQueueUrl, e);
+            // Log but don't rethrow - the quote is already persisted in DynamoDB
         }
     }
 }

@@ -19,7 +19,7 @@ public class ProductDTO {
 
     private String id;
     private String name;
-    private LocalDateTime createdAt;
+    private String createdAt;
     private Boolean active;
     private List<String> offers;
 }

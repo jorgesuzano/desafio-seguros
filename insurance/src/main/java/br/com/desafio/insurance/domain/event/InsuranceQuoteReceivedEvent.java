@@ -42,6 +42,6 @@ public class InsuranceQuoteReceivedEvent {
     private Map<String, Object> customer;
     
     @JsonProperty("received_at")
-    private LocalDateTime receivedAt;
+    private String receivedAt;
 }
 

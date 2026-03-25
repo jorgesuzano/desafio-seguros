@@ -22,7 +22,7 @@ public class OfferDTO {
     private String id;
     private String productId;
     private String name;
-    private LocalDateTime createdAt;
+    private String createdAt;
     private Boolean active;
     private Map<String, BigDecimal> coverages;
     private List<String> assistances;

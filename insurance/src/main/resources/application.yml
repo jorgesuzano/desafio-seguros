@@ -1,7 +1,5 @@
 server:
   port: 8080
-  servlet:
-    context-path: /insurance-api
 
 spring:
   application:
@@ -37,10 +35,10 @@ management:
   endpoint:
     health:
       show-details: always
-#  metrics:
-#    export:
-#      prometheus:
-#        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
 
 logging:
   level:
@@ -58,6 +56,11 @@ cloud:
     credentials:
       access-key: admin
       secret-key: admin
+    dynamodb:
+      endpoint: http://localhost:4566
+      table:
+        name: insurance-quotes
     fila:
-      insurance-quote-received:  http://localhost:4566/000000000000/insurance-quote-received
+      insurance-quote-received: http://localhost:4566/000000000000/insurance-quote-received
       insurance-policy-created: http://localhost:4566/000000000000/insurance-policy-created
+

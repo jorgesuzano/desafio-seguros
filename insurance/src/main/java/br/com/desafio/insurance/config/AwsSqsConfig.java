@@ -19,76 +19,24 @@ import java.net.URI;
 @Configuration
 public class AwsSqsConfig {
     
-    @Value("${aws.sqs.endpoint:}")
-    private String sqsEndpoint;
-    
     @Value("${aws.sqs.region:us-east-1}")
     private String awsRegion;
     
-    @Value("${aws.sqs.queue.insurance-quote-received:insurance-quote-received}")
-    private String quoteReceivedQueueName;
-    
-    @Value("${aws.sqs.queue.insurance-policy-created:insurance-policy-created}")
-    private String policyCreatedQueueName;
-
-//    @Bean
-//    public SqsClient sqsClient() {
-//        log.info("Configuring SQS client for region: {}", awsRegion);
-//
-//        SqsClient sqsClient = SqsClient.builder()
-////                .region(Region.SA_EAST_1)
-////                .endpointOverride(URI.create(sqsEndpoint))
-//                .credentialsProvider(
-//                                StaticCredentialsProvider.create(
-//                                        AwsBasicCredentials.create("admin", "admin")
-//                                )
-//                        ).build();
-//
-//        return sqsClient;
-//    }
-    
     @Bean
     public SqsClient sqsClient() {
-        log.info("Configuring SQS client for region: {}", awsRegion);
+        log.info("Configuring SQS client for region: {} and endpoint: http://localhost:4566", awsRegion);
 
-//        SqsClientBuilder builder = SqsClient.builder()
-//                .region(Region.of(awsRegion))
-//            .credentialsProvider(DefaultCredentialsProvider.create());
-
-//        return SqsClient.builder()
-//                .endpointOverride(URI.create(sqsEndpoint)) // 👉 LocalStack
-//                .region(Region.of(awsRegion))
-////                .credentialsProvider(
-////                        StaticCredentialsProvider.create(
-////                                AwsBasicCredentials.create("admin", "admin")
-////                        )
-////                )
-//                .build();
-
-        SqsClientBuilder builder = SqsClient.builder()
+        return SqsClient.builder()
                 .endpointOverride(URI.create("http://localhost:4566"))
-                .region(Region.SA_EAST_1)
+                .region(Region.of(awsRegion))
                 .credentialsProvider(
                         StaticCredentialsProvider.create(
-                                AwsBasicCredentials.create("admin", "admin")
+                                AwsBasicCredentials.create("test", "test")
                         )
-                );
-        if (sqsEndpoint != null && !sqsEndpoint.isEmpty()) {
-            log.info("Using local SQS endpoint: {}", sqsEndpoint);
-            builder.endpointOverride(URI.create(sqsEndpoint));
-        }
-        
-        return builder.build();
+                )
+                .build();
     }
-    
-//    @Bean
-//    public SqsQueueConfig sqsQueueConfig(SqsClient sqsClient) {
-//        return new SqsQueueConfig(
-//            sqsClient,
-//            quoteReceivedQueueName,
-//            policyCreatedQueueName
-//        );
-//    }
+
 }
 
 

@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +30,7 @@ public class InsuranceQuoteController {
     private final InsuranceQuoteProducer quoteProducer;
 
     @PostMapping
-    public ResponseEntity<?> createQuote(@Valid @RequestBody InsuranceQuoteRequestDTO request) {
+    public ResponseEntity<?> createQuote(@RequestBody InsuranceQuoteRequestDTO request) {
         try {
             log.info("Received insurance quote request for product: {} and offer: {}",
                     request.getProductId(), request.getOfferId());
@@ -43,40 +42,40 @@ public class InsuranceQuoteController {
             log.info("Quote validated successfully against catalog. Offer: {}", validatedOffer.getName());
 
             // 2. Criar e persistir cotação com validações
-//            InsuranceQuote quote = quoteService.createAndValidateQuote(request, validatedOffer);
-//
+            InsuranceQuote quote = quoteService.createAndValidateQuote(request, validatedOffer);
+
 //            // 3. Publicar evento Kafka
-//            Map<String, Object> customerMap = new HashMap<>();
-//            customerMap.put("document_number", request.getCustomer().getDocumentNumber());
-//            customerMap.put("name", request.getCustomer().getName());
-//            customerMap.put("type", request.getCustomer().getType().toString());
-//            customerMap.put("gender", request.getCustomer().getGender().toString());
-//            customerMap.put("date_of_birth", request.getCustomer().getDateOfBirth());
-//            customerMap.put("email", request.getCustomer().getEmail());
-//            customerMap.put("phone_number", request.getCustomer().getPhoneNumber());
-//
-//            InsuranceQuoteReceivedEvent event = InsuranceQuoteReceivedEvent.builder()
-//                    .quoteId(quote.getId())
-//                    .productId(request.getProductId())
-//                    .offerId(request.getOfferId())
-//                    .category(request.getCategory())
-//                    .totalMonthlyPremiumAmount(request.getTotalMonthlyPremiumAmount())
-//                    .totalCoverageAmount(request.getTotalCoverageAmount())
-//                    .coverages(request.getCoverages())
-//                    .assistances(request.getAssistances())
-//                    .customer(customerMap)
-//                    .receivedAt(LocalDateTime.now())
-//                    .build();
-//
-//            quoteProducer.publishQuoteReceivedEvent(event);
+            Map<String, Object> customerMap = new HashMap<>();
+            customerMap.put("document_number", request.getCustomer().getDocumentNumber());
+            customerMap.put("name", request.getCustomer().getName());
+            customerMap.put("type", request.getCustomer().getType().toString());
+            customerMap.put("gender", request.getCustomer().getGender().toString());
+            customerMap.put("date_of_birth", request.getCustomer().getDateOfBirth());
+            customerMap.put("email", request.getCustomer().getEmail());
+            customerMap.put("phone_number", request.getCustomer().getPhoneNumber());
+
+            InsuranceQuoteReceivedEvent event = InsuranceQuoteReceivedEvent.builder()
+                    .quoteId(quote.getId())
+                    .productId(request.getProductId())
+                    .offerId(request.getOfferId())
+                    .category(request.getCategory())
+                    .totalMonthlyPremiumAmount(request.getTotalMonthlyPremiumAmount())
+                    .totalCoverageAmount(request.getTotalCoverageAmount())
+                    .coverages(request.getCoverages())
+                    .assistances(request.getAssistances())
+                    .customer(customerMap)
+                    .receivedAt(LocalDateTime.now().toString())
+                    .build();
+
+            quoteProducer.publishQuoteReceivedEvent(event);
 
             // 4. Retornar resposta com ID
-//            log.info("Quote processed successfully with ID: {}", quote.getId());
+            log.info("Quote processed successfully with ID: {}", quote.getId());
 
             Map<String, Object> response = new HashMap<>();
-//            response.put("id", quote.getId());
-//            response.put("message", "Cotação criada com sucesso");
-//            response.put("status", quote.getStatus().toString());
+            response.put("id", quote.getId());
+            response.put("message", "Cotação criada com sucesso");
+            response.put("status", quote.getStatus().toString());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
 
@@ -84,14 +83,14 @@ public class InsuranceQuoteController {
             log.error("Validation error: {}", e.getMessage());
             Map<String, Object> error = new HashMap<>();
             error.put("error", e.getMessage());
-            error.put("timestamp", LocalDateTime.now());
+            error.put("timestamp", LocalDateTime.now().toString());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 
         } catch (Exception e) {
             log.error("Error processing quote", e);
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Erro ao processar cotação: " + e.getMessage());
-            error.put("timestamp", LocalDateTime.now());
+            error.put("timestamp", LocalDateTime.now().toString());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
@@ -136,14 +135,14 @@ public class InsuranceQuoteController {
             log.error("Quote not found: {}", quoteId);
             Map<String, Object> error = new HashMap<>();
             error.put("error", e.getMessage());
-            error.put("timestamp", LocalDateTime.now());
+            error.put("timestamp", LocalDateTime.now().toString());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
 
         } catch (Exception e) {
             log.error("Error retrieving quote", e);
             Map<String, Object> error = new HashMap<>();
             error.put("error", "Erro ao recuperar cotação: " + e.getMessage());
-            error.put("timestamp", LocalDateTime.now());
+            error.put("timestamp", LocalDateTime.now().toString());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }

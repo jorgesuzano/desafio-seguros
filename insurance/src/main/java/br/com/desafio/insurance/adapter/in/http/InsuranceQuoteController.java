@@ -4,6 +4,7 @@ import br.com.desafio.insurance.adapter.in.http.mapper.InsuranceQuoteResponseMap
 import br.com.desafio.insurance.adapter.out.messaging.mapper.QuoteEventMapper;
 import br.com.desafio.insurance.domain.catalog.OfferDTO;
 import br.com.desafio.insurance.domain.event.InsuranceQuoteReceivedEvent;
+import br.com.desafio.insurance.domain.exception.ServiceUnavailableException;
 import br.com.desafio.insurance.domain.model.InsuranceQuote;
 import br.com.desafio.insurance.domain.port.in.InsuranceQuoteUseCase;
 import br.com.desafio.insurance.domain.port.out.CatalogPort;
@@ -55,6 +56,10 @@ public class InsuranceQuoteController {
             log.warn("Quote validation failed: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                     .body(errorBody(e.getMessage()));
+        } catch (ServiceUnavailableException e) {
+            log.warn("Dependency temporarily unavailable: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(errorBody(e.getMessage()));
         } catch (Exception e) {
             log.error("Unexpected error creating quote", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -73,6 +78,10 @@ public class InsuranceQuoteController {
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(e.getMessage()));
+        } catch (ServiceUnavailableException e) {
+            log.warn("Dependency temporarily unavailable: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(errorBody(e.getMessage()));
         } catch (Exception e) {
             log.error("Error retrieving quote {}", quoteId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -3,6 +3,7 @@ package br.com.desafio.insurance.adapter.out.messaging.producer;
 import br.com.desafio.insurance.domain.event.InsuranceQuoteReceivedEvent;
 import br.com.desafio.insurance.domain.port.out.QuoteEventPublisherPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,8 @@ import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 @RequiredArgsConstructor
 public class SqsQuoteEventPublisher implements QuoteEventPublisherPort {
 
+    private static final String CB_NAME = "sqsPublisher";
+
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
 
@@ -23,6 +26,7 @@ public class SqsQuoteEventPublisher implements QuoteEventPublisherPort {
     private String quoteReceivedQueueUrl;
 
     @Override
+    @CircuitBreaker(name = CB_NAME, fallbackMethod = "publishFallback")
     public void publish(InsuranceQuoteReceivedEvent event) {
         log.debug("Publishing quote-received event – quoteId: {}", event.getQuoteId());
         try {
@@ -35,10 +39,17 @@ public class SqsQuoteEventPublisher implements QuoteEventPublisherPort {
             log.debug("Quote-received event sent – quoteId: {} messageId: {}",
                     event.getQuoteId(), result.messageId());
         } catch (Exception e) {
-            // Non-fatal: quote is already persisted; event failure should not roll back.
-            log.error("Failed to publish quote-received event for quoteId: {}",
-                    event.getQuoteId(), e);
+            // Re-throw so Resilience4j can record the failure and open the circuit.
+            throw new RuntimeException("Failed to publish quote-received event for quoteId: "
+                    + event.getQuoteId(), e);
         }
     }
-}
 
+    // ---- fallback -------------------------------------------------------
+
+    @SuppressWarnings("unused")
+    private void publishFallback(InsuranceQuoteReceivedEvent event, Throwable ex) {
+        log.warn("Circuit breaker OPEN for SQS publisher – quoteId: {} cause: {}",
+                event.getQuoteId(), ex.getMessage());
+    }
+}

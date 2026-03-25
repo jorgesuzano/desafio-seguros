@@ -31,14 +31,72 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,circuitbreakers,circuitbreakerevents
   endpoint:
     health:
       show-details: always
-#  metrics:
-#    export:
-#      prometheus:
-#        enabled: true
+  health:
+    circuitbreakers:
+      enabled: true
+
+# ─── Resilience4j ────────────────────────────────────────────────────────────
+resilience4j:
+
+  # Circuit Breaker: protects catalog service, DynamoDB, and SQS publisher.
+  circuitbreaker:
+    configs:
+      default:
+        # COUNT_BASED: evaluate last N calls (vs TIME_BASED which uses a time window)
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        # Open circuit when ≥50% of last 10 calls fail
+        failureRateThreshold: 50
+        # Stay OPEN for 30 s before entering HALF_OPEN
+        waitDurationInOpenState: 30s
+        # Number of probe calls allowed in HALF_OPEN state
+        permittedNumberOfCallsInHalfOpenState: 3
+        # Automatically move from OPEN → HALF_OPEN after wait duration
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        # Register /actuator/health circuit breaker indicator
+        registerHealthIndicator: true
+        # Business validation errors must NOT count as infrastructure failures
+        ignoreExceptions:
+          - java.lang.IllegalArgumentException
+
+    instances:
+      # Catalog external HTTP service — small window (few calls per request)
+      catalogService:
+        baseConfig: default
+        slidingWindowSize: 5
+        failureRateThreshold: 60
+        waitDurationInOpenState: 20s
+
+      # DynamoDB — medium sensitivity; longer wait gives AWS time to recover
+      dynamoDb:
+        baseConfig: default
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+
+      # SQS publisher — non-fatal; open quickly to stop hammering a down queue
+      sqsPublisher:
+        baseConfig: default
+        slidingWindowSize: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+
+  # Retry: transient errors on the catalog service (e.g. network blip) are
+  # retried once before the call counts as a failure for the circuit breaker.
+  retry:
+    instances:
+      catalogService:
+        maxAttempts: 2
+        waitDuration: 300ms
+        retryExceptions:
+          - java.io.IOException
+          - feign.RetryableException
+          - feign.FeignException$ServiceUnavailable
+          - feign.FeignException$GatewayTimeout
 
 logging:
   level:

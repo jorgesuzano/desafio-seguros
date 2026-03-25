@@ -2,24 +2,26 @@ package br.com.desafio.insurance.adapter.out.catalog;
 
 import br.com.desafio.insurance.domain.catalog.OfferDTO;
 import br.com.desafio.insurance.domain.catalog.ProductDTO;
+import br.com.desafio.insurance.domain.exception.ServiceUnavailableException;
 import br.com.desafio.insurance.domain.port.out.CatalogPort;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-/**
- * Outbound adapter: implements CatalogPort by delegating to the external catalog service
- * via Feign. Renamed from CatalogValidationService — this class is an adapter, not an
- * application service.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class CatalogServiceAdapter implements CatalogPort {
 
+    private static final String CB_NAME = "catalogService";
+
     private final CatalogServiceClient catalogServiceClient;
 
     @Override
+    @Retry(name = CB_NAME)
+    @CircuitBreaker(name = CB_NAME, fallbackMethod = "catalogFallback")
     public OfferDTO validateProductAndOffer(String productId, String offerId) {
         ProductDTO product = catalogServiceClient.getProduct(productId);
         validateProduct(productId, product);
@@ -30,6 +32,18 @@ public class CatalogServiceAdapter implements CatalogPort {
         log.debug("Product {} and offer {} validated", productId, offerId);
         return offer;
     }
+
+    // ---- fallback -------------------------------------------------------
+
+    @SuppressWarnings("unused")
+    private OfferDTO catalogFallback(String productId, String offerId, Throwable ex) {
+        log.error("Circuit breaker OPEN for catalog service – productId: {} offerId: {} cause: {}",
+                productId, offerId, ex.getMessage());
+        throw new ServiceUnavailableException(
+                "Catálogo de produtos temporariamente indisponível. Tente novamente em instantes.", ex);
+    }
+
+    // ---- private helpers ------------------------------------------------
 
     private void validateProduct(String productId, ProductDTO product) {
         if (product == null)
@@ -47,4 +61,3 @@ public class CatalogServiceAdapter implements CatalogPort {
             throw new IllegalArgumentException("Oferta não pertence ao produto informado");
     }
 }
-

@@ -38,6 +38,33 @@ management:
   health:
     circuitbreakers:
       enabled: true
+  # ── Datadog metrics (direct push) ─────────────────────────────────────────
+  datadog:
+    metrics:
+      export:
+        # Set DATADOG_API_KEY env var in production; disabled locally by default
+        enabled: ${DATADOG_METRICS_ENABLED:false}
+        api-key: ${DATADOG_API_KEY:abc1234567890abcdef}
+        uri: ${DATADOG_URI:https://api.datadoghq.com}
+        step: 1m
+  # ── Distributed tracing (Micrometer OTel bridge → Datadog Agent) ──────────
+  tracing:
+    sampling:
+      # 100% sampling locally; reduce in production (e.g. 0.1 = 10%)
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+    enabled: ${TRACING_ENABLED:true}
+
+# ── OpenTelemetry OTLP exporter → Datadog Agent ───────────────────────────
+otel:
+  exporter:
+    otlp:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+  service:
+    name: ${spring.application.name}
+  resource:
+    attributes:
+      deployment.environment: ${APP_ENV:local}
+      service.version: ${APP_VERSION:0.0.1}
 
 # ─── Resilience4j ────────────────────────────────────────────────────────────
 resilience4j:
@@ -122,10 +149,3 @@ cloud:
       insurance-quote-received: ${CLOUD_AWS_FILA_INSURANCE_QUOTE_RECEIVED:http://localhost:4566/000000000000/insurance-quote-received}
       insurance-policy-created: ${CLOUD_AWS_FILA_INSURANCE_POLICY_CREATED:http://localhost:4566/000000000000/insurance-policy-created}
 
-aws:
-  region: sa-east-1
-  accessKey: admin
-  secretKey: admin
-  sqs:
-    queue-url: ${CLOUD_AWS_FILA_INSURANCE_QUOTE_RECEIVED:http://localhost:4566/000000000000/insurance-quote-received}
-    endpoint: ${AWS_SQS_ENDPOINT:http://localhost:4566}

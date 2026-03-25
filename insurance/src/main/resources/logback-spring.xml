@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="appName"
+                    source="spring.application.name"
+                    defaultValue="insurance-quote-service"/>
+    <springProperty scope="context" name="appEnv"
+                    source="otel.resource.attributes.deployment.environment"
+                    defaultValue="local"/>
+    <springProperty scope="context" name="appVersion"
+                    source="otel.resource.attributes.service.version"
+                    defaultValue="0.0.1"/>
+
+    <appender name="CONSOLE_PLAIN" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%15.15thread] [%36.36logger] [traceId=%X{traceId:-} spanId=%X{spanId:-}] — %msg%n%ex
+            </pattern>
+        </encoder>
+    </appender>
+
+    <appender name="CONSOLE_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"service":"${appName}","env":"${appEnv}","version":"${appVersion}"}</customFields>
+
+            <mdcField>traceId:dd.trace_id</mdcField>
+            <mdcField>spanId:dd.span_id</mdcField>
+
+            <fieldNames>
+                <timestamp>@timestamp</timestamp>
+                <message>message</message>
+                <logger>logger_name</logger>
+                <thread>thread_name</thread>
+                <level>level</level>
+                <levelValue>[ignore]</levelValue>
+            </fieldNames>
+
+            <includeMdcKeyName>.*</includeMdcKeyName>
+
+            <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+                <maxDepthPerCause>30</maxDepthPerCause>
+                <shortenedClassNameLength>30</shortenedClassNameLength>
+                <rootCauseFirst>true</rootCauseFirst>
+            </throwableConverter>
+        </encoder>
+    </appender>
+
+    <springProfile name="default,local">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_PLAIN"/>
+        </root>
+        <logger name="br.com.desafio.insurance" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE_PLAIN"/>
+        </logger>
+    </springProfile>
+
+    <springProfile name="docker,staging,prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE_JSON"/>
+        </root>
+        <logger name="br.com.desafio.insurance" level="DEBUG" additivity="false">
+            <appender-ref ref="CONSOLE_JSON"/>
+        </logger>
+    </springProfile>
+
+</configuration>
+

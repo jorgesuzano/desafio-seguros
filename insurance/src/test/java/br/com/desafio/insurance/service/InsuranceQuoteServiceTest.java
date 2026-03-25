@@ -15,6 +15,8 @@ import br.com.desafio.insurance.domain.validation.CoverageValidator;
 import br.com.desafio.insurance.domain.validation.PremiumAmountValidator;
 import br.com.desafio.insurance.domain.validation.QuoteValidator;
 import br.com.desafio.insurance.domain.validation.TotalCoverageAmountValidator;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,6 +43,9 @@ class InsuranceQuoteServiceTest {
     @Mock
     private InsuranceQuoteRepositoryPort quoteRepository;
 
+    // Real registry — avoids NPE inside Timer.start() / sample.stop()
+    private final MeterRegistry meterRegistry = new SimpleMeterRegistry();
+
     private InsuranceQuoteService quoteService;
 
     private InsuranceQuoteRequestDTO validRequest;
@@ -54,7 +59,7 @@ class InsuranceQuoteServiceTest {
                 new PremiumAmountValidator(),
                 new TotalCoverageAmountValidator()
         );
-        quoteService = new InsuranceQuoteService(quoteRepository, validators);
+        quoteService = new InsuranceQuoteService(quoteRepository, validators, meterRegistry);
 
         Map<String, BigDecimal> coverages = new HashMap<>();
         coverages.put("Incêndio", new BigDecimal("250000.00"));

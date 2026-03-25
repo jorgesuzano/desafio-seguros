@@ -2,32 +2,6 @@ version: '3.0'
 
 services:
 
-  zookeeper:
-    image: "docker.io/bitnami/zookeeper:3"
-    ports:
-      - "2181:2181"
-    volumes:
-      - "zookeeper_data:/bitnami"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-
-  kafka:
-    image: "docker.io/bitnami/kafka:2-debian-10"
-    ports:
-      - "9092:9092"
-      - "9093:9093"
-    volumes:
-      - "kafka_data:/bitnami"
-    environment:
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
-      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
-    depends_on:
-      - zookeeper
-
   localstack:
     image: localstack/localstack:3
     environment:
@@ -40,40 +14,37 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "./init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh"
 
-  insurance-app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: insurance-app
-    ports:
-      - "8080:8080"
+  datadog-agent:
+    image: datadog/agent:7
+    container_name: datadog-agent
     environment:
-      - CLOUD_AWS_DYNAMODB_ENDPOINT=http://localstack:4566
-      - AWS_SQS_ENDPOINT=http://localstack:4566
-      - CLOUD_AWS_FILA_INSURANCE_QUOTE_RECEIVED=http://localstack:4566/000000000000/insurance-quote-received
-      - CLOUD_AWS_FILA_INSURANCE_POLICY_CREATED=http://localstack:4566/000000000000/insurance-policy-created
-    depends_on:
-      - localstack
+      # ── Authentication ──────────────────────────────────────────────────
+      - DD_API_KEY=${DD_API_KEY:?DD_API_KEY is required}
+      - DD_SITE=${DD_SITE:-datadoghq.com}
+      # ── APM / Distributed Tracing ──────────────────────────────────────
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true          # accept traces from other containers
+      # ── OTLP receiver (replaces the classic dd-java-agent approach) ────
+      - DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT=0.0.0.0:4317
+      - DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT=0.0.0.0:4318
+      # ── Metrics ────────────────────────────────────────────────────────
+      - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true    # accept DogStatsD from other containers
+      # ── Logs ───────────────────────────────────────────────────────────
+      - DD_LOGS_ENABLED=true
+      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+      - DD_CONTAINER_EXCLUDE=name:datadog-agent
+      # ── Unified Service Tagging ────────────────────────────────────────
+      - DD_ENV=${DD_ENV:-local}
+    ports:
+      - "8125:8125/udp"   # DogStatsD
+      - "4317:4317"        # OTLP gRPC  ← Spring Boot sends traces here
+      - "4318:4318"        # OTLP HTTP  (optional alternative)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
 
-  policy-app:
-    build:
-      context: ../policy-service
-      dockerfile: Dockerfile
-    container_name: policy-app
-    ports:
-      - "8081:8081"
-    environment:
-      - CLOUD_AWS_DYNAMODB_ENDPOINT=http://localstack:4566
-      - AWS_SQS_ENDPOINT=http://localstack:4566
-      - CLOUD_AWS_FILA_INSURANCE_QUOTE_RECEIVED=http://localstack:4566/000000000000/insurance-quote-received
-      - CLOUD_AWS_FILA_INSURANCE_POLICY_CREATED=http://localstack:4566/000000000000/insurance-policy-created
-    depends_on:
-      - localstack
 
 volumes:
-  zookeeper_data:
-    driver: local
-  kafka_data:
-    driver: local
   localstack_data:
     driver: local

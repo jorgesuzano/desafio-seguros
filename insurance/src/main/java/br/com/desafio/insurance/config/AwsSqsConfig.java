@@ -17,21 +17,27 @@ public class AwsSqsConfig {
     
     @Value("${aws.sqs.region:sa-east-1}")
     private String awsRegion;
-    
+
+    @Value("${aws.sqs.endpoint:http://localhost:4566}")
+    private String endpoint;
+
     @Bean
     public SqsClient sqsClient() {
-        log.info("Configuring SQS client for region: {} and endpoint: http://localhost:4566", awsRegion);
+        log.info("Configuring SQS client for region: {} and endpoint: {}", awsRegion, endpoint);
 
+        var credentialsProvider = StaticCredentialsProvider.create(
+                AwsBasicCredentials.create("admin", "admin")
+        );
         // Using empty credentials for LocalStack - it accepts any credentials in local mode
-        return SqsClient.builder()
-                .endpointOverride(URI.create("http://localhost:4566"))
+        var builder = SqsClient.builder()
                 .region(Region.of(awsRegion))
-//                .credentialsProvider(
-//                        StaticCredentialsProvider.create(
-//                                AwsBasicCredentials.create("admin", "admin")
-//                        )
-//                )
-                .build();
+                .credentialsProvider(credentialsProvider);
+
+        if (endpoint != null && !endpoint.isBlank()) {
+            builder.endpointOverride(URI.create(endpoint));
+        }
+
+        return builder.build();
     }
 
 }

@@ -30,7 +30,7 @@ public class InsuranceQuote {
     private Long updatedAt;
     private String statusIndex;
     private String productOfferIndex;
-    
+
     // Constructors
     public InsuranceQuote() {
     }
@@ -65,11 +65,11 @@ public class InsuranceQuote {
         if (this.id == null) {
             this.id = UUID.randomUUID().toString();
         }
-        
+
         if (this.createdAt == null) {
             this.createdAt = System.currentTimeMillis();
         }
-        
+
         this.updatedAt = System.currentTimeMillis();
         this.statusIndex = status.toString() + "#" + createdAt;
         this.productOfferIndex = productId + "#" + offerId;

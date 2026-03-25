@@ -27,11 +27,12 @@ public class DynamoDbConfig {
     private String tableName;
     
     @Bean
-    public DynamoDbClient dynamoDbClient() {
-        log.info("Configuring DynamoDB client for region: {} and table: {}", awsRegion, tableName);
+    public DynamoDbClient dynamoDbClient(
+            @Value("${cloud.aws.dynamodb.endpoint:http://localhost:4566}") String dynamoEndpoint) {
+        log.info("Configuring DynamoDB client for region: {} endpoint: {} table: {}", awsRegion, dynamoEndpoint, tableName);
         
         return DynamoDbClient.builder()
-            .endpointOverride(URI.create("http://localhost:4566"))
+            .endpointOverride(URI.create(dynamoEndpoint))
             .region(Region.of(awsRegion))
             .credentialsProvider(StaticCredentialsProvider.create(
                 AwsBasicCredentials.create("test", "test")
@@ -40,8 +41,7 @@ public class DynamoDbConfig {
     }
     
     @Bean
-    public DynamoDbEnhancedClient dynamoDbEnhancedClient(DynamoDbClient dynamoDbClient) {
-        return DynamoDbEnhancedClient.builder()
+    public DynamoDbEnhancedClient dynamoDbEnhancedClient(DynamoDbClient dynamoDbClient) {        return DynamoDbEnhancedClient.builder()
             .dynamoDbClient(dynamoDbClient)
             .build();
     }

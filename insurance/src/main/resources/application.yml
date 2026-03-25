@@ -35,10 +35,10 @@ management:
   endpoint:
     health:
       show-details: always
-  metrics:
-    export:
-      prometheus:
-        enabled: true
+#  metrics:
+#    export:
+#      prometheus:
+#        enabled: true
 
 logging:
   level:
@@ -57,10 +57,17 @@ cloud:
       access-key: admin
       secret-key: admin
     dynamodb:
-      endpoint: http://localhost:4566
+      endpoint: ${CLOUD_AWS_DYNAMODB_ENDPOINT:http://localhost:4566}
       table:
         name: insurance-quotes
     fila:
-      insurance-quote-received: http://localhost:4566/000000000000/insurance-quote-received
-      insurance-policy-created: http://localhost:4566/000000000000/insurance-policy-created
+      insurance-quote-received: ${CLOUD_AWS_FILA_INSURANCE_QUOTE_RECEIVED:http://localhost:4566/000000000000/insurance-quote-received}
+      insurance-policy-created: ${CLOUD_AWS_FILA_INSURANCE_POLICY_CREATED:http://localhost:4566/000000000000/insurance-policy-created}
 
+aws:
+  region: sa-east-1
+  accessKey: admin
+  secretKey: admin
+  sqs:
+    queue-url: ${CLOUD_AWS_FILA_INSURANCE_QUOTE_RECEIVED:http://localhost:4566/000000000000/insurance-quote-received}
+    endpoint: ${AWS_SQS_ENDPOINT:http://localhost:4566}

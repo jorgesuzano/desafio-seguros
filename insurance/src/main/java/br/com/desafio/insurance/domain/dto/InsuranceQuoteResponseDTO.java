@@ -19,7 +19,7 @@ import java.util.List;
 public class InsuranceQuoteResponseDTO {
     
     private String id;
-    
+
     @JsonProperty("insurance_policy_id")
     private Long insurancePolicyId;
     

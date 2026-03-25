@@ -1,26 +1,32 @@
 package br.com.desafio.insurance.service;
 
+import br.com.desafio.insurance.application.InsuranceQuoteService;
 import br.com.desafio.insurance.domain.catalog.OfferDTO;
 import br.com.desafio.insurance.domain.catalog.PremiumAmountDTO;
-import br.com.desafio.insurance.domain.entity.InsuranceQuote;
-import br.com.desafio.insurance.domain.entity.QuoteStatus;
+import br.com.desafio.insurance.domain.model.InsuranceQuote;
+import br.com.desafio.insurance.domain.model.QuoteStatus;
+import br.com.desafio.insurance.domain.port.out.InsuranceQuoteRepositoryPort;
 import br.com.desafio.insurance.domain.quote.CustomerDTO;
 import br.com.desafio.insurance.domain.quote.CustomerType;
 import br.com.desafio.insurance.domain.quote.Gender;
 import br.com.desafio.insurance.domain.quote.InsuranceQuoteRequestDTO;
-import br.com.desafio.insurance.persistence.repository.InsuranceQuoteRepositoryPort;
+import br.com.desafio.insurance.domain.validation.AssistanceValidator;
+import br.com.desafio.insurance.domain.validation.CoverageValidator;
+import br.com.desafio.insurance.domain.validation.PremiumAmountValidator;
+import br.com.desafio.insurance.domain.validation.QuoteValidator;
+import br.com.desafio.insurance.domain.validation.TotalCoverageAmountValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,7 +41,6 @@ class InsuranceQuoteServiceTest {
     @Mock
     private InsuranceQuoteRepositoryPort quoteRepository;
 
-    @InjectMocks
     private InsuranceQuoteService quoteService;
 
     private InsuranceQuoteRequestDTO validRequest;
@@ -43,6 +48,14 @@ class InsuranceQuoteServiceTest {
 
     @BeforeEach
     void setUp() {
+        List<QuoteValidator> validators = List.of(
+                new CoverageValidator(),
+                new AssistanceValidator(),
+                new PremiumAmountValidator(),
+                new TotalCoverageAmountValidator()
+        );
+        quoteService = new InsuranceQuoteService(quoteRepository, validators);
+
         Map<String, BigDecimal> coverages = new HashMap<>();
         coverages.put("Incêndio", new BigDecimal("250000.00"));
         coverages.put("Desastres naturais", new BigDecimal("500000.00"));

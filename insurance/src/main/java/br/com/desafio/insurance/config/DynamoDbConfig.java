@@ -11,7 +11,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import br.com.desafio.insurance.domain.entity.InsuranceQuote;
+import br.com.desafio.insurance.domain.model.InsuranceQuote;
 
 import java.net.URI;
 

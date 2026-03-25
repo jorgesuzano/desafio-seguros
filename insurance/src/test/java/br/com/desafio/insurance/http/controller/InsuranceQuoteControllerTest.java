@@ -1,14 +1,16 @@
 package br.com.desafio.insurance.http.controller;
 
+import br.com.desafio.insurance.adapter.in.http.InsuranceQuoteController;
+import br.com.desafio.insurance.adapter.in.http.mapper.InsuranceQuoteResponseMapper;
+import br.com.desafio.insurance.adapter.out.messaging.mapper.QuoteEventMapper;
 import br.com.desafio.insurance.domain.catalog.OfferDTO;
 import br.com.desafio.insurance.domain.catalog.PremiumAmountDTO;
-import br.com.desafio.insurance.domain.entity.InsuranceQuote;
-import br.com.desafio.insurance.domain.entity.QuoteStatus;
 import br.com.desafio.insurance.domain.event.InsuranceQuoteReceivedEvent;
-import br.com.desafio.insurance.messaging.mapper.QuoteEventMapper;
-import br.com.desafio.insurance.messaging.producer.InsuranceQuoteProducer;
-import br.com.desafio.insurance.service.CatalogPort;
-import br.com.desafio.insurance.service.InsuranceQuoteServicePort;
+import br.com.desafio.insurance.domain.model.InsuranceQuote;
+import br.com.desafio.insurance.domain.model.QuoteStatus;
+import br.com.desafio.insurance.domain.port.in.InsuranceQuoteUseCase;
+import br.com.desafio.insurance.domain.port.out.CatalogPort;
+import br.com.desafio.insurance.domain.port.out.QuoteEventPublisherPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,8 +39,8 @@ class InsuranceQuoteControllerTest {
     @Autowired ObjectMapper objectMapper;
 
     @MockBean CatalogPort catalogPort;
-    @MockBean InsuranceQuoteServicePort quoteService;
-    @MockBean InsuranceQuoteProducer quoteProducer;
+    @MockBean InsuranceQuoteUseCase quoteUseCase;
+    @MockBean QuoteEventPublisherPort quotePublisher;
     @MockBean QuoteEventMapper eventMapper;
     @MockBean InsuranceQuoteResponseMapper responseMapper;
 
@@ -104,9 +106,9 @@ class InsuranceQuoteControllerTest {
     @DisplayName("POST /api/v1/quotes - should return 201 Created")
     void shouldCreateQuoteAndReturn201() throws Exception {
         when(catalogPort.validateProductAndOffer(anyString(), anyString())).thenReturn(mockOffer);
-        when(quoteService.createAndValidateQuote(any(), any())).thenReturn(savedQuote);
+        when(quoteUseCase.createAndValidateQuote(any(), any())).thenReturn(savedQuote);
         when(eventMapper.toEvent(any(), any())).thenReturn(InsuranceQuoteReceivedEvent.builder().build());
-        doNothing().when(quoteProducer).publishQuoteReceivedEvent(any());
+        doNothing().when(quotePublisher).publish(any());
 
         mockMvc.perform(post("/api/v1/quotes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -115,7 +117,7 @@ class InsuranceQuoteControllerTest {
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.status").value("RECEIVED"));
 
-        verify(quoteProducer).publishQuoteReceivedEvent(any());
+        verify(quotePublisher).publish(any());
     }
 
     @Test
@@ -135,7 +137,7 @@ class InsuranceQuoteControllerTest {
     @DisplayName("POST /api/v1/quotes - should return 422 when business validation fails")
     void shouldReturn422WhenBusinessValidationFails() throws Exception {
         when(catalogPort.validateProductAndOffer(anyString(), anyString())).thenReturn(mockOffer);
-        when(quoteService.createAndValidateQuote(any(), any()))
+        when(quoteUseCase.createAndValidateQuote(any(), any()))
                 .thenThrow(new IllegalArgumentException("Valor do prêmio inválido"));
 
         mockMvc.perform(post("/api/v1/quotes")

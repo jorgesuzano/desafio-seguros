@@ -31,7 +31,7 @@ public class PolicyEventListener {
     
     private volatile boolean initialized = false;
 
-    @Value("${aws.sqs.queue.insurance-policy-created}")
+    @Value("${cloud.aws.fila.insurance-policy-created}")
     private String policyCreatedQueueName;
     
     @EventListener(ApplicationReadyEvent.class)

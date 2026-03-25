@@ -20,7 +20,7 @@ import java.net.URI;
 @Configuration
 public class DynamoDbConfig {
     
-    @Value("${aws.dynamodb.region:us-east-1}")
+    @Value("${aws.dynamodb.region:sa-east-1}")
     private String awsRegion;
     
     @Value("${aws.dynamodb.table.name:insurance-quotes}")

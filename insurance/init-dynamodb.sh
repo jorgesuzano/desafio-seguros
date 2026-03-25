@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-CONTAINER_NAME="insurance-localstack-1"
+CONTAINER_NAME="insurance_localstack_1"
 REGION="sa-east-1"
 TABLE_NAME="insurance-quotes"
 

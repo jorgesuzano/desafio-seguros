@@ -1,5 +1,5 @@
 {
-  "TableName": "tb_insurance_quotes",
+  "TableName": "insurance-quotes",
   "KeySchema": [
     {
       "AttributeName": "id",
